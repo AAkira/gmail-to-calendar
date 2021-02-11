@@ -82,7 +82,7 @@ function parseYamato(message) {
     endTimeHour = matchedEndTimeHour[0].replace('時まで', '');
   }
 
-  createEvent("ヤマト配達", "mailDate: " + strDate + "\n" + getEmailLink(message),
+  createEvent("ヤマト配達", "mailDate: " + strDate,
    "", year, month, dayOfMonth, startTimeHour, 0, endTimeHour, 0);
 }
 
@@ -126,7 +126,7 @@ function parseYubin(message) {
     endTimeHour = matchedEndTimeHour[0].replace('時', '');
   }
 
-  createEvent("郵便配達", "mailDate: " + strDate + "\n" + getEmailLink(message),
+  createEvent("郵便配達", "mailDate: " + strDate,
    "", year, month, dayOfMonth, startTimeHour, 0, endTimeHour, 0);
 }
 
@@ -159,7 +159,7 @@ function parseGnavi(message) {
   const addressRegexp = RegExp(addressPrefix + '.*', 'gi');
   const address = strMessage.match(addressRegexp)[2].replace(addressPrefix, '');
 
-  createEvent(title, "mailDate: " + strDate + "\n" + getEmailLink(message), address,
+  createEvent(title, "mailDate: " + strDate, address,
     year, month, dayOfMonth, startTimeHour, startTimeMinute, startTimeHour, startTimeMinute);
 }
 
