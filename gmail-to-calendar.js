@@ -1,6 +1,7 @@
 const QUERY_YAMATO = 'subject:(受け取り日時変更依頼受付完了のお知らせ) ';
 const QUERY_GNAVI = 'subject:(［ぐるなび］予約が確定しました) ';
-const QUERY_YUBIN = 'subject:(日本郵便】受付完了のお知らせ)'
+const QUERY_YUBIN = 'subject:(日本郵便】受付完了のお知らせ)';
+const QUERY_HOTPEPPER_BEAUTY = 'subject:ご予約が確定いたしました from:reserve@beauty.hotpepper.jp ';
 
 function main() {
   pickUpMessage(QUERY_YAMATO, function (message) {
@@ -11,6 +12,9 @@ function main() {
   });
   pickUpMessage(QUERY_YUBIN, function (message) {
     parseYubin(message);
+  });
+  pickUpMessage(QUERY_HOTPEPPER_BEAUTY, function (message) {
+    parseHotpepperBeauty(message);
   });
 }
 
@@ -83,7 +87,7 @@ function parseYamato(message) {
   }
 
   createEvent("ヤマト配達", "mailDate: " + strDate,
-   "", year, month, dayOfMonth, startTimeHour, 0, endTimeHour, 0);
+    "", year, month, dayOfMonth, startTimeHour, 0, endTimeHour, 0);
 }
 
 // 日本郵便
@@ -127,13 +131,13 @@ function parseYubin(message) {
   }
 
   createEvent("郵便配達", "mailDate: " + strDate,
-   "", year, month, dayOfMonth, startTimeHour, 0, endTimeHour, 0);
+    "", year, month, dayOfMonth, startTimeHour, 0, endTimeHour, 0);
 }
 
 // ぐるなび
 function parseGnavi(message) {
   const strDate = message.getDate();
-  const strMessage = message.getPlainBody()
+  const strMessage = message.getPlainBody();
 
   const suffix = "のご予約が確定しました。";
   const regexp = RegExp('.*' + suffix, 'gi');
@@ -153,7 +157,6 @@ function parseGnavi(message) {
   const startTimeMinute = baseStr.match(/[0-9]{2}分/gi)[0].replace('分', '');
   const title = baseStr.match(/「.*」/gi)[0].replace('「', '').replace('」', '');
 
-
   // 住所
   const addressPrefix = '- - - - - - - - - -\n';
   const addressRegexp = RegExp(addressPrefix + '.*', 'gi');
@@ -163,3 +166,43 @@ function parseGnavi(message) {
     year, month, dayOfMonth, startTimeHour, startTimeMinute, startTimeHour, startTimeMinute);
 }
 
+// Hotpepper beauty
+function parseHotpepperBeauty(message) {
+  const strMessage = message.getPlainBody();
+
+  const salonPrefix = "■サロン名";
+  const regexpSalon = RegExp(salonPrefix + '[\\s\\S]*?' + '.+', 'gi');
+  const salonName = strMessage.match(regexpSalon)[0]
+    .replace(salonPrefix, '')
+    .trim();
+
+  const descriptionPrefix = "■メニュー";
+  const couponPrefix = "■ご利用クーポン";
+  const regexpDescription = RegExp(descriptionPrefix + '[\\s\\S]*?' + '(.+|[\\s\\S]*?)' + couponPrefix, 'gi');
+  const description = strMessage.match(regexpDescription)[0]
+    .replace(descriptionPrefix, '')
+    .replace(couponPrefix, '')
+    .trim();
+
+  const locationPrefix = "※上の地図ページが開かない場合こちらの地図をご参照ください";
+  const regexpLocation = RegExp(locationPrefix + '[\\s\\S]*?' + '.+', 'gi');
+  const location = strMessage.match(regexpLocation)[0]
+    .replace(locationPrefix, '')
+    .trim();
+
+  const datePrefix = "■来店日時";
+  const dateRegex = "[0-9]{4}年(0[1-9]|1[0-2])月(0[1-9]|[12][0-9]|3[01])日（.）([01][0-9]|2[0-3]):[0-5][0-9]";
+  const regexpDate = RegExp(datePrefix + '[\\s\\S]*?' + dateRegex, 'gi');
+  const date = strMessage.match(regexpDate)[0]
+    .replace(datePrefix, '')
+    .trim();
+
+  const year = date.match(/[0-9]{4}年/gi)[0].replace('年', '');
+  const month = date.match(/(0[1-9]|1[0-2])月/gi)[0].replace('月', '');
+  const dayOfMonth = date.match(/(0[1-9]|[12][0-9]|3[01])日/gi)[0].replace('日', '');
+  const startTimeHour = date.match(/([01][0-9]|2[0-3]):/gi)[0].replace(':', '');
+  const startTimeMinute = date.match(/:[0-5][0-9]/gi)[0].replace(':', '');
+
+  createEvent(salonName, description,
+    location, year, month, dayOfMonth, startTimeHour, startTimeMinute, parseInt(startTimeHour) + 1, startTimeMinute);
+}
